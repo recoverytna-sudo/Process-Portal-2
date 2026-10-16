@@ -293,7 +293,6 @@ app.post('/api/promotions/:id/cancel', async (req, res) => {
 });
 
 app.post('/api/promotions/:id/archive', async (req, res) => {
-  title = 'Archive Promotion';
   try {
     const { password } = req.body;
     if (password !== (process.env.LEADER_PASSWORD || '1366')) {
@@ -322,5 +321,11 @@ app.post('/api/login', (req, res) => {
   }
 });
 
+// --- Server Listening & Export for Vercel ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+module.exports = app;
