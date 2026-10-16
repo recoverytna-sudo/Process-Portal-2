@@ -7,10 +7,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Helper to format private key properly
+function getFormattedPrivateKey() {
+  let pk = process.env.GOOGLE_PRIVATE_KEY || '';
+  // Remove surrounding quotes if accidentally added
+  pk = pk.replace(/^["']|["']$/g, '');
+  // Replace literal \n string with actual newline characters
+  return pk.replace(/\\n/g, '\n');
+}
+
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : '',
+    private_key: getFormattedPrivateKey(),
   },
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
@@ -69,7 +78,7 @@ async function updateSheetRow(sheetName, idField, idValue, updatedData) {
   let rowIndex = -1;
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][idIndex] === idValue) {
-      rowIndex = i + 1; // 1-based index for sheets
+      rowIndex = i + 1;
       break;
     }
   }
@@ -93,7 +102,6 @@ async function updateSheetRow(sheetName, idField, idValue, updatedData) {
 
 // --- API Endpoints ---
 
-// 1. Categories
 app.get('/api/categories', async (req, res) => {
   try {
     const data = await getSheetData('Categories');
@@ -103,7 +111,6 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// 2. Processes GET All
 app.get('/api/processes', async (req, res) => {
   try {
     const data = await getSheetData('Processes');
@@ -113,7 +120,6 @@ app.get('/api/processes', async (req, res) => {
   }
 });
 
-// 3. Process Details GET
 app.get('/api/processes/:id', async (req, res) => {
   try {
     const data = await getSheetData('Processes');
@@ -125,7 +131,6 @@ app.get('/api/processes/:id', async (req, res) => {
   }
 });
 
-// 4. Create Process (Leader)
 app.post('/api/processes', async (req, res) => {
   try {
     const { password, ...body } = req.body;
@@ -156,7 +161,6 @@ app.post('/api/processes', async (req, res) => {
   }
 });
 
-// 5. Update Process (Leader)
 app.put('/api/processes/:id', async (req, res) => {
   try {
     const { password, ...body } = req.body;
@@ -177,7 +181,6 @@ app.put('/api/processes/:id', async (req, res) => {
   }
 });
 
-// 6. Archive Process (Leader)
 app.post('/api/processes/:id/archive', async (req, res) => {
   try {
     const { password } = req.body;
@@ -198,7 +201,6 @@ app.post('/api/processes/:id/archive', async (req, res) => {
   }
 });
 
-// 7. Promotions GET All
 app.get('/api/promotions', async (req, res) => {
   try {
     const data = await getSheetData('Promotions');
@@ -208,7 +210,6 @@ app.get('/api/promotions', async (req, res) => {
   }
 });
 
-// 8. Promotion Details GET
 app.get('/api/promotions/:id', async (req, res) => {
   try {
     const data = await getSheetData('Promotions');
@@ -220,7 +221,6 @@ app.get('/api/promotions/:id', async (req, res) => {
   }
 });
 
-// 9. Create Promotion (Leader)
 app.post('/api/promotions', async (req, res) => {
   try {
     const { password, ...body } = req.body;
@@ -252,7 +252,6 @@ app.post('/api/promotions', async (req, res) => {
   }
 });
 
-// 10. Update Promotion (Leader)
 app.put('/api/promotions/:id', async (req, res) => {
   try {
     const { password, ...body } = req.body;
@@ -273,7 +272,6 @@ app.put('/api/promotions/:id', async (req, res) => {
   }
 });
 
-// 11. Cancel Promotion (Leader)
 app.post('/api/promotions/:id/cancel', async (req, res) => {
   try {
     const { password } = req.body;
@@ -294,8 +292,8 @@ app.post('/api/promotions/:id/cancel', async (req, res) => {
   }
 });
 
-// 12. Archive Promotion (Leader)
 app.post('/api/promotions/:id/archive', async (req, res) => {
+  title = 'Archive Promotion';
   try {
     const { password } = req.body;
     if (password !== (process.env.LEADER_PASSWORD || '1366')) {
@@ -315,7 +313,6 @@ app.post('/api/promotions/:id/archive', async (req, res) => {
   }
 });
 
-// Leader Login Verification Endpoint
 app.post('/api/login', (req, res) => {
   const { password } = req.body;
   if (password === (process.env.LEADER_PASSWORD || '1366')) {
